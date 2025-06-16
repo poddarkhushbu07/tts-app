@@ -3,123 +3,301 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hinglish TTS</title>
+    <title>TTS</title>
     <style>
         :root {
-            --primary: #007bff;
-            --primary-dark: #0056b3;
-            --background: #f8fafc;
-            --card-bg: #fff;
-            --border: #e2e8f0;
-            --radius: 12px;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --background: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --radius: 16px;
+            --text: #e2e8f0;
         }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: var(--background);
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 480px;
-            margin: 32px auto;
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-            padding: 24px 18px 32px 18px;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5em;
-            color: var(--primary-dark);
-            text-align: center;
-        }
-        label {
-            font-weight: 600;
-            margin-bottom: 6px;
-            display: block;
-        }
-        select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 1em;
-            margin-bottom: 10px;
-            background: #f9f9f9;
-            transition: border 0.2s;
-        }
-        select:focus, textarea:focus {
-            border: 1.5px solid var(--primary);
-            outline: none;
-        }
-        textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        button {
-            padding: 12px 0;
-            background: var(--primary);
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-top: 8px;
+            color: var(--text);
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            position: relative;
+            overflow: hidden;
         }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        .blob-1 {
+            background: #4f46e5;
+            width: 300px;
+            height: 300px;
+            top: -100px;
+            left: -100px;
+            animation: blob 7s infinite;
+        }
+
+        .blob-2 {
+            background: #6366f1;
+            width: 400px;
+            height: 400px;
+            bottom: -150px;
+            right: -150px;
+            animation: blob 7s infinite;
+            animation-delay: 2s;
+        }
+
+        .blob-3 {
+            background: #818cf8;
+            width: 350px;
+            height: 350px;
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, 50%);
+            animation: blob 7s infinite;
+            animation-delay: 4s;
+        }
+
+        @keyframes blob {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            margin: 32px;
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5em;
+            background: linear-gradient(to right, #818cf8, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            color: var(--text);
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1em;
+            margin-bottom: 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 16px 32px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 16px 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+            letter-spacing: 0.5px;
+            width: 100%;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         button:disabled {
-            background: #b0b0b0;
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
             cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.8;
         }
+
         button:hover:not(:disabled) {
-            background: var(--primary-dark);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
         }
+
+        button:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+        }
+
         .loading {
             display: none;
             width: 20px;
             height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid var(--primary);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
+            position: relative;
+            flex-shrink: 0;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .error {
-            color: #e53e3e;
-            background: #fff0f0;
-            border: 1px solid #fbb6b6;
-            border-radius: 6px;
-            padding: 8px;
-            margin-top: 4px;
-            font-size: 0.98em;
+
+        button span {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
         }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        button:hover::before {
+            opacity: 1;
+        }
+
+        /* Add a subtle shine effect */
+        button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.1) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(45deg);
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        button:hover::after {
+            opacity: 1;
+            animation: shine 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        .error {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius);
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 0.95em;
+            animation: fadeIn 0.3s ease-out;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .loading-text {
+            color: var(--text);
+            font-size: 0.95em;
+            margin-top: 8px;
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .loading-text.show {
+            display: block;
+        }
+
         #audioPlayer {
             width: 100%;
-            margin-top: 18px;
+            margin-top: 16px;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, 0.05);
         }
+
         .voice-details {
-            font-size: 0.95em;
-            color: #555;
-            margin-top: 2px;
+            font-size: 0.9em;
+            color: #94a3b8;
+            margin-top: 4px;
         }
+
         @media (max-width: 600px) {
             .container {
-                max-width: 98vw;
-                padding: 10vw 2vw 12vw 2vw;
+                margin: 16px;
+                padding: 24px;
             }
             h1 {
-                font-size: 1.3rem;
+                font-size: 1.5rem;
             }
             button {
                 font-size: 1em;
@@ -128,14 +306,20 @@
     </style>
 </head>
 <body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    
     <div class="container">
-        <h1>Hinglish Text to Speech</h1>
+        <h1>TTS</h1>
         <form id="ttsForm" onsubmit="event.preventDefault(); generateSpeech();">
             <label for="voiceSelect">Select Voice</label>
             <select id="voiceSelect"></select>
         
+        
             <label for="textInput">Enter Text</label>
             <textarea id="textInput" placeholder="Type your Hinglish text here..."></textarea>
+            
             <button id="generateBtn" type="submit">
                 <span>Generate Speech</span>
                 <div id="loading" class="loading"></div>
@@ -144,6 +328,7 @@
         </form>
         <audio id="audioPlayer" controls></audio>
     </div>
+
     <script>
         const textInput = document.getElementById('textInput');
         const audioPlayer = document.getElementById('audioPlayer');
@@ -151,16 +336,46 @@
         const generateBtn = document.getElementById('generateBtn');
         const loadingSpinner = document.getElementById('loading');
         const voiceSelect = document.getElementById('voiceSelect');
-        const voiceInfo = document.getElementById('voiceInfo');
         let voices = [];
         let selectedVoiceId = null;
-        const defaultVoiceId = 'hi-IN-shaan';
+        const defaultVoiceId = 'hi-IN-amit';
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.add('show');
+        }
+
+        function hideError() {
+            errorDiv.textContent = '';
+            errorDiv.classList.remove('show');
+        }
+
+        function showLoading() {
+            generateBtn.disabled = true;
+            loadingSpinner.style.display = 'block';
+            hideError();
+        }
+
+        function hideLoading() {
+            generateBtn.disabled = false;
+            loadingSpinner.style.display = 'none';
+        }
 
         async function loadVoices() {
             try {
+                console.log('Loading voices...');
+                hideError();
                 const response = await fetch('/api/voices');
-                if (!response.ok) throw new Error('Failed to load voices');
+                console.log('Voice API response:', response);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to load voices');
+                }
+                
                 voices = await response.json();
+                console.log('Voices loaded:', voices);
+                
                 voiceSelect.innerHTML = '';
                 let defaultIdx = 0;
                 voices.forEach((voice, idx) => {
@@ -174,42 +389,28 @@
                     voiceSelect.appendChild(option);
                 });
                 selectedVoiceId = voices[defaultIdx]?.id || voices[0]?.id;
-                showVoiceInfo(selectedVoiceId);
             } catch (error) {
-                errorDiv.textContent = 'Failed to load voices: ' + error.message;
-            }
-        }
-
-        function showVoiceInfo(voiceId) {
-            const voice = voices.find(v => v.id === voiceId);
-            if (voice) {
-                voiceInfo.innerHTML = `
-                    <b>Styles:</b> ${voice.styles.join(', ')}
-                `;
-            } else {
-                voiceInfo.innerHTML = '';
+                console.error('Error loading voices:', error);
+                showError('Failed to load voices: ' + error.message);
             }
         }
 
         voiceSelect.addEventListener('change', function() {
             selectedVoiceId = this.value;
-            showVoiceInfo(selectedVoiceId);
         });
 
         async function generateSpeech() {
             if (!textInput.value.trim()) {
-                errorDiv.textContent = 'Please enter some text';
+                showError('Please enter some text');
                 return;
             }
             if (!selectedVoiceId) {
-                errorDiv.textContent = 'Please select a voice';
+                showError('Please select a voice');
                 return;
             }
+
+            showLoading();
             try {
-                errorDiv.textContent = '';
-                audioPlayer.src = '';
-                generateBtn.disabled = true;
-                loadingSpinner.style.display = 'block';
                 const response = await fetch('/api/tts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -218,25 +419,38 @@
                         voiceId: selectedVoiceId
                     })
                 });
+
                 if (!response.ok) {
                     const error = await response.json();
                     throw new Error(error.error || 'Failed to generate speech');
                 }
+
                 const audioBlob = await response.blob();
                 const audioUrl = URL.createObjectURL(audioBlob);
+                
+                // Reset audio player
+                audioPlayer.pause();
+                audioPlayer.removeAttribute('src');
+                audioPlayer.load();
+                
+                // Set new source and play
                 audioPlayer.src = audioUrl;
-                await audioPlayer.play();
+                try {
+                    await audioPlayer.play();
+                } catch (playError) {
+                    throw new Error('Failed to play audio: ' + playError.message);
+                }
             } catch (error) {
-                errorDiv.textContent = error.message;
+                showError(error.message);
             } finally {
-                generateBtn.disabled = false;
-                loadingSpinner.style.display = 'none';
+                hideLoading();
             }
         }
-        audioPlayer.addEventListener('error', (e) => {
-            errorDiv.textContent = 'Error playing audio: ' + (e.target.error?.message || 'Unknown error');
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            loadVoices();
         });
-        loadVoices();
     </script>
 </body>
 </html> 

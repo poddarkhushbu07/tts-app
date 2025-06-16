@@ -21,6 +21,14 @@ app.get('/', (req, res) => {
 // Get available voices
 app.get('/api/voices', async (req, res) => {
   try {
+    console.log('Fetching voices from Murf API...');
+    console.log('API Key present:', !!process.env.MURF_API_KEY);
+    
+    if (!process.env.MURF_API_KEY) {
+      throw new Error('MURF_API_KEY is not configured in .env file');
+    }
+
+    console.log(process.env.MURF_API_KEY)
     const response = await axios({
       method: 'get',
       url: 'https://api.murf.ai/v1/speech/voices',
@@ -28,6 +36,8 @@ app.get('/api/voices', async (req, res) => {
         'api-key': process.env.MURF_API_KEY
       }
     });
+
+    console.log('Murf API response:', response.data);
 
     // Filter and format voices for the UI
     const voices = response.data
@@ -37,12 +47,14 @@ app.get('/api/voices', async (req, res) => {
         name: voice.displayName,
         gender: voice.gender,
         accent: voice.accent,
-        styles: voice.availableStyles
+        styles: voice.availableStyles || []
       }));
 
+    console.log('Filtered voices:', voices);
     res.json(voices);
   } catch (error) {
     console.error('Error fetching voices:', error.response?.data || error.message);
+    console.error('Full error:', error);
     res.status(500).json({ 
       error: 'Failed to fetch voices',
       details: error.response?.data || error.message
