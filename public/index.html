@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hinglish TTS</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --primary-dark: #0056b3;
+            --background: #f8fafc;
+            --card-bg: #fff;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 480px;
+            margin: 32px auto;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 24px 18px 32px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5em;
+            color: var(--primary-dark);
+            text-align: center;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: block;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1em;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            transition: border 0.2s;
+        }
+        select:focus, textarea:focus {
+            border: 1.5px solid var(--primary);
+            outline: none;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            padding: 12px 0;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button:disabled {
+            background: #b0b0b0;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+        .loading {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #e53e3e;
+            background: #fff0f0;
+            border: 1px solid #fbb6b6;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 4px;
+            font-size: 0.98em;
+        }
+        #audioPlayer {
+            width: 100%;
+            margin-top: 18px;
+        }
+        .voice-details {
+            font-size: 0.95em;
+            color: #555;
+            margin-top: 2px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                max-width: 98vw;
+                padding: 10vw 2vw 12vw 2vw;
+            }
+            h1 {
+                font-size: 1.3rem;
+            }
+            button {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hinglish Text to Speech</h1>
+        <form id="ttsForm" onsubmit="event.preventDefault(); generateSpeech();">
+            <label for="voiceSelect">Select Voice</label>
+            <select id="voiceSelect"></select>
+        
+            <label for="textInput">Enter Text</label>
+            <textarea id="textInput" placeholder="Type your Hinglish text here..."></textarea>
+            <button id="generateBtn" type="submit">
+                <span>Generate Speech</span>
+                <div id="loading" class="loading"></div>
+            </button>
+            <div id="error" class="error"></div>
+        </form>
+        <audio id="audioPlayer" controls></audio>
+    </div>
+    <script>
+        const textInput = document.getElementById('textInput');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const errorDiv = document.getElementById('error');
+        const generateBtn = document.getElementById('generateBtn');
+        const loadingSpinner = document.getElementById('loading');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const voiceInfo = document.getElementById('voiceInfo');
+        let voices = [];
+        let selectedVoiceId = null;
+        const defaultVoiceId = 'hi-IN-shaan';
+
+        async function loadVoices() {
+            try {
+                const response = await fetch('/api/voices');
+                if (!response.ok) throw new Error('Failed to load voices');
+                voices = await response.json();
+                voiceSelect.innerHTML = '';
+                let defaultIdx = 0;
+                voices.forEach((voice, idx) => {
+                    const option = document.createElement('option');
+                    option.value = voice.id;
+                    option.textContent = `${voice.name} (${voice.gender}, ${voice.accent})`;
+                    if (voice.id === defaultVoiceId) {
+                        option.selected = true;
+                        defaultIdx = idx;
+                    }
+                    voiceSelect.appendChild(option);
+                });
+                selectedVoiceId = voices[defaultIdx]?.id || voices[0]?.id;
+                showVoiceInfo(selectedVoiceId);
+            } catch (error) {
+                errorDiv.textContent = 'Failed to load voices: ' + error.message;
+            }
+        }
+
+        function showVoiceInfo(voiceId) {
+            const voice = voices.find(v => v.id === voiceId);
+            if (voice) {
+                voiceInfo.innerHTML = `
+                    <b>Styles:</b> ${voice.styles.join(', ')}
+                `;
+            } else {
+                voiceInfo.innerHTML = '';
+            }
+        }
+
+        voiceSelect.addEventListener('change', function() {
+            selectedVoiceId = this.value;
+            showVoiceInfo(selectedVoiceId);
+        });
+
+        async function generateSpeech() {
+            if (!textInput.value.trim()) {
+                errorDiv.textContent = 'Please enter some text';
+                return;
+            }
+            if (!selectedVoiceId) {
+                errorDiv.textContent = 'Please select a voice';
+                return;
+            }
+            try {
+                errorDiv.textContent = '';
+                audioPlayer.src = '';
+                generateBtn.disabled = true;
+                loadingSpinner.style.display = 'block';
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: textInput.value,
+                        voiceId: selectedVoiceId
+                    })
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to generate speech');
+                }
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                audioPlayer.src = audioUrl;
+                await audioPlayer.play();
+            } catch (error) {
+                errorDiv.textContent = error.message;
+            } finally {
+                generateBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+            }
+        }
+        audioPlayer.addEventListener('error', (e) => {
+            errorDiv.textContent = 'Error playing audio: ' + (e.target.error?.message || 'Unknown error');
+        });
+        loadVoices();
+    </script>
+</body>
+</html> 
