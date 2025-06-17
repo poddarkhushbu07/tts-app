@@ -707,11 +707,9 @@
         const clearHistoryBtn = document.getElementById('clearHistory');
         const navButtons = document.querySelectorAll('.nav-button');
         const screens = document.querySelectorAll('.main-content');
-        let voices = [];
+        const downloadBtn = document.getElementById('downloadBtn');
         let selectedVoiceId = null;
         const defaultVoiceId = 'hi-IN-amit';
-        const downloadBtn = document.getElementById('downloadBtn');
-        let currentAudioUrl = null;
         const styleSelect = document.getElementById('styleSelect');
         let selectedStyle = 'conversational';
 
@@ -750,38 +748,97 @@
             loadingSpinner.style.display = 'none';
         }
 
-        async function loadVoices() {
-            try {
-                console.log('Loading voices...');
-                hideError();
-                const response = await fetch('/api/voices');
-                console.log('Voice API response:', response);
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Failed to load voices');
+        // Update the voices array with Murf's Indian voices
+        const voices = [
+            {
+                id: 'hi-IN-ayushi',
+                name: 'Ayushi',
+                gender: 'Female',
+                accent: 'Hindi',
+                language: 'Hindi'
+            },
+            {
+                id: 'hi-IN-amit',
+                name: 'Amit',
+                gender: 'Male',
+                accent: 'Hindi',
+                language: 'Hindi'
+            },
+            {
+                id: 'en-IN-aarav',
+                name: 'Aarav',
+                gender: 'Male',
+                accent: 'Indian English',
+                language: 'English'
+            },
+            {
+                id: 'en-IN-alia',
+                name: 'Alia',
+                gender: 'Female',
+                accent: 'Indian English',
+                language: 'English'
+            },
+            {
+                id: 'en-IN-rohan',
+                name: 'Rohan',
+                gender: 'Male',
+                accent: 'Indian English',
+                language: 'English'
+            },
+            {
+                id: 'en-IN-eashwar',
+                name: 'Eashwar',
+                gender: 'Male',
+                accent: 'Indian English',
+                language: 'English'
+            },
+            {
+                id: 'hi-IN-kabir',
+                name: 'Kabir',
+                gender: 'Male',
+                accent: 'Hindi',
+                language: 'Hindi'
+            },
+            {
+                id: 'hi-IN-rahul',
+                name: 'Rahul',
+                gender: 'Male',
+                accent: 'Hindi',
+                language: 'Hindi'
+            }
+        ];
+
+        // Update the loadVoices function
+        function loadVoices() {
+            voiceSelect.innerHTML = '';
+            
+            // Group voices by language
+            const groupedVoices = voices.reduce((acc, voice) => {
+                if (!acc[voice.language]) {
+                    acc[voice.language] = [];
                 }
+                acc[voice.language].push(voice);
+                return acc;
+            }, {});
+
+            // Create optgroups for each language
+            Object.entries(groupedVoices).forEach(([language, languageVoices]) => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = language;
                 
-                voices = await response.json();
-                console.log('Voices loaded:', voices);
-                
-                voiceSelect.innerHTML = '';
-                let defaultIdx = 0;
-                voices.forEach((voice, idx) => {
+                languageVoices.forEach(voice => {
                     const option = document.createElement('option');
                     option.value = voice.id;
                     option.textContent = `${voice.name} (${voice.gender}, ${voice.accent})`;
-                    if (voice.id === defaultVoiceId) {
-                        option.selected = true;
-                        defaultIdx = idx;
-                    }
-                    voiceSelect.appendChild(option);
+                    optgroup.appendChild(option);
                 });
-                selectedVoiceId = voices[defaultIdx]?.id || voices[0]?.id;
-            } catch (error) {
-                console.error('Error loading voices:', error);
-                showError('Failed to load voices: ' + error.message);
-            }
+                
+                voiceSelect.appendChild(optgroup);
+            });
+
+            // Set default voice
+            voiceSelect.value = defaultVoiceId;
+            selectedVoiceId = defaultVoiceId;
         }
 
         voiceSelect.addEventListener('change', function() {
@@ -829,9 +886,10 @@
                     li.innerHTML = `
                         <div class="history-content">
                             <div class="history-text">${data.text}</div>
-                            <div class="history-details">
+                            <div class="history-meta">
                                 <span class="history-voice">${data.voiceName}</span>
-                                <span class="history-date">${new Date(data.timestamp?.toDate()).toLocaleString()}</span>
+                                <span class="history-style">${data.style}</span>
+                                <span class="history-time">${new Date(data.timestamp?.toDate()).toLocaleString()}</span>
                             </div>
                         </div>
                         <div class="history-actions">
