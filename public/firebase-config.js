@@ -19,6 +19,6 @@ db.enablePersistence()
     if (err.code === 'failed-precondition') {
       console.log('Multiple tabs open, persistence can only be enabled in one tab at a time.');
     } else if (err.code === 'unimplemented') {
-      console.log('The current browser does not support persistence.');
+      console.log('The current browser does not suppor t persistence.');
     }
   }); 

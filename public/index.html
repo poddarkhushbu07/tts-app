@@ -161,6 +161,42 @@
             margin-bottom: 1.5rem;
         }
 
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: white;
+            font-size: 1rem;
+            color: #1f2937;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem;
+        }
+
         @media (max-width: 640px) {
             .form-group {
                 margin-bottom: 1rem;
@@ -601,6 +637,22 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="styleSelect">Select Style</label>
+                    <select id="styleSelect">
+                        <option value="conversational">Conversational</option>
+                        <option value="narrative">Narrative</option>
+                        <option value="newscast">Newscast</option>
+                        <option value="customerservice">Customer Service</option>
+                        <option value="cheerful">Cheerful</option>
+                        <option value="sad">Sad</option>
+                        <option value="angry">Angry</option>
+                        <option value="fearful">Fearful</option>
+                        <option value="disgust">Disgust</option>
+                        <option value="surprised">Surprised</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
                     <label for="textInput">Enter Text</label>
                     <textarea id="textInput" rows="4" placeholder="Enter your text here..."></textarea>
                 </div>
@@ -660,6 +712,8 @@
         const defaultVoiceId = 'hi-IN-amit';
         const downloadBtn = document.getElementById('downloadBtn');
         let currentAudioUrl = null;
+        const styleSelect = document.getElementById('styleSelect');
+        let selectedStyle = 'conversational';
 
         // Navigation
         navButtons.forEach(button => {
@@ -734,13 +788,14 @@
             selectedVoiceId = this.value;
         });
 
-        async function saveToHistory(text, voiceId) {
+        async function saveToHistory(text, voiceId, style) {
             try {
                 const voice = voices.find(v => v.id === voiceId);
                 await db.collection('searchHistory').add({
                     text: text,
                     voiceId: voiceId,
                     voiceName: voice ? `${voice.name} (${voice.gender}, ${voice.accent})` : voiceId,
+                    style: style,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 loadHistory();
@@ -801,7 +856,9 @@
                         e.stopPropagation();
                         textInput.value = data.text;
                         voiceSelect.value = data.voiceId;
+                        styleSelect.value = data.style;
                         selectedVoiceId = data.voiceId;
+                        selectedStyle = data.style;
                         // Switch to TTS screen
                         navButtons[0].click();
                         textInput.focus();
@@ -886,7 +943,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         text: textInput.value,
-                        voiceId: selectedVoiceId
+                        voiceId: selectedVoiceId,
+                        style: selectedStyle
                     })
                 });
 
@@ -899,7 +957,7 @@
                 const audioUrl = URL.createObjectURL(audioBlob);
                 
                 // Save to history after successful generation
-                await saveToHistory(textInput.value, selectedVoiceId);
+                await saveToHistory(textInput.value, selectedVoiceId, selectedStyle);
                 
                 // Reset audio player
                 audioPlayer.pause();
@@ -922,12 +980,18 @@
             }
         }
 
+        // Add style change handler
+        styleSelect.addEventListener('change', (e) => {
+            selectedStyle = e.target.value;
+        });
+
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
             loadVoices();
             loadHistory();
             clearHistoryBtn.addEventListener('click', clearHistory);
-            updateDownloadButton(null); // Hide download button initially
+            updateDownloadButton(null);
+            selectedStyle = styleSelect.value; // Set initial style
         });
     </script>
 </body>
