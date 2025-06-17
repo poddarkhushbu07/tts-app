@@ -4,15 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TTS</title>
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --background: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
-            --radius: 16px;
-            --text: #e2e8f0;
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --error: #ef4444;
+            --success: #22c55e;
         }
 
         * {
@@ -22,311 +23,625 @@
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: var(--background);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #fff;
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .blob {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.5;
-            z-index: -1;
-        }
-
-        .blob-1 {
-            background: #4f46e5;
-            width: 300px;
-            height: 300px;
-            top: -100px;
-            left: -100px;
-            animation: blob 7s infinite;
-        }
-
-        .blob-2 {
-            background: #6366f1;
-            width: 400px;
-            height: 400px;
-            bottom: -150px;
-            right: -150px;
-            animation: blob 7s infinite;
-            animation-delay: 2s;
-        }
-
-        .blob-3 {
-            background: #818cf8;
-            width: 350px;
-            height: 350px;
-            bottom: 50%;
-            left: 50%;
-            transform: translate(-50%, 50%);
-            animation: blob 7s infinite;
-            animation-delay: 4s;
-        }
-
-        @keyframes blob {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0, 0) scale(1); }
+            flex-direction: column;
         }
 
         .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
             width: 100%;
-            max-width: 480px;
-            margin: 32px;
-            background: var(--card-bg);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+        }
+
+        .header {
             display: flex;
-            flex-direction: column;
-            gap: 24px;
-            animation: fadeIn 0.3s ease-out;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        @media (max-width: 640px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .nav-buttons {
+                width: 100%;
+            }
+
+            .nav-button {
+                flex: 1;
+                justify-content: center;
+            }
         }
 
-        h1 {
+        .header h1 {
             font-size: 2rem;
-            margin-bottom: 0.5em;
-            background: linear-gradient(to right, #818cf8, #6366f1);
+            font-weight: 700;
+            background: linear-gradient(to right, #4f46e5, #a5b4fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 480px) {
+            .nav-button {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .nav-button svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-button.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .nav-button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.active {
+            display: block;
+        }
+
+        .tts-form {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            .tts-form {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tts-form {
+                padding: 1rem;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .form-group {
+                margin-bottom: 1rem;
+            }
         }
 
         label {
-            font-weight: 600;
-            margin-bottom: 8px;
             display: block;
-            color: var(--text);
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        @media (max-width: 640px) {
+            label {
+                font-size: 0.9rem;
+            }
         }
 
         select, textarea {
             width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 1em;
-            margin-bottom: 16px;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-            transition: all 0.2s;
+            color: #fff;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 640px) {
+            select, textarea {
+                padding: 0.6rem;
+                font-size: 0.9rem;
+            }
         }
 
         select:focus, textarea:focus {
-            border-color: var(--primary);
             outline: none;
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
         }
 
         textarea {
-            min-height: 120px;
             resize: vertical;
+            min-height: 100px;
         }
 
         button {
-            padding: 16px 32px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: var(--primary);
             color: white;
             border: none;
-            border-radius: var(--radius);
-            font-size: 1.1em;
-            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 0.5rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 16px 0;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 12px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
-            letter-spacing: 0.5px;
-            width: 100%;
+            white-space: nowrap;
             max-width: 300px;
             margin-left: auto;
             margin-right: auto;
         }
 
+        @media (max-width: 640px) {
+            button {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+                max-width: 100%;
+            }
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
         button:disabled {
-            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+            opacity: 0.7;
             cursor: not-allowed;
-            box-shadow: none;
-            opacity: 0.8;
-        }
-
-        button:hover:not(:disabled) {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
-        }
-
-        button:active:not(:disabled) {
-            transform: translateY(0) scale(0.98);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+            transform: none;
         }
 
         .loading {
             display: none;
             width: 20px;
             height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top: 2px solid white;
+            border: 2px solid #ffffff;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            position: relative;
-            flex-shrink: 0;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        button span {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            white-space: nowrap;
-        }
-
-        button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        button:hover::before {
-            opacity: 1;
-        }
-
-        /* Add a subtle shine effect */
-        button::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                to right,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.1) 50%,
-                rgba(255, 255, 255, 0) 100%
-            );
-            transform: rotate(45deg);
-            transition: all 0.3s ease;
-            opacity: 0;
-        }
-
-        button:hover::after {
-            opacity: 1;
-            animation: shine 1.5s ease-in-out infinite;
-        }
-
-        @keyframes shine {
-            0% { transform: translateX(-100%) rotate(45deg); }
-            100% { transform: translateX(100%) rotate(45deg); }
+            to { transform: rotate(360deg); }
         }
 
         .error {
-            color: #ef4444;
+            color: var(--error);
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: var(--radius);
-            padding: 12px;
-            margin-top: 8px;
-            font-size: 0.95em;
-            animation: fadeIn 0.3s ease-out;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
             display: none;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 640px) {
+            .error {
+                padding: 0.75rem;
+                font-size: 0.85rem;
+            }
         }
 
         .error.show {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
-        .loading-text {
-            color: var(--text);
-            font-size: 0.95em;
-            margin-top: 8px;
-            display: none;
-            animation: fadeIn 0.3s ease-out;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .loading-text.show {
-            display: block;
-        }
-
-        #audioPlayer {
+        audio {
             width: 100%;
-            margin-top: 16px;
-            border-radius: var(--radius);
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+        }
+
+        @media (max-width: 640px) {
+            audio {
+                margin-top: 0.75rem;
+            }
+        }
+
+        /* History Screen Styles */
+        .history-screen {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            height: calc(100vh - 200px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media (max-width: 640px) {
+            .history-screen {
+                height: calc(100vh - 160px);
+            }
+        }
+
+        .history-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .history-header {
+                padding: 1rem;
+            }
+        }
+
+        .history-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        @media (max-width: 640px) {
+            .history-title {
+                font-size: 1.25rem;
+            }
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .history-list {
+                padding: 0.75rem;
+            }
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .history-item {
             background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.3s ease;
         }
 
-        .voice-details {
-            font-size: 0.9em;
-            color: #94a3b8;
-            margin-top: 4px;
+        @media (max-width: 640px) {
+            .history-item {
+                padding: 0.75rem;
+                gap: 0.75rem;
+            }
         }
 
-        @media (max-width: 600px) {
-            .container {
-                margin: 16px;
-                padding: 24px;
+        .history-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .history-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .history-text {
+            color: #fff;
+            margin-bottom: 0.5rem;
+            word-break: break-word;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 640px) {
+            .history-text {
+                font-size: 0.9rem;
             }
-            h1 {
-                font-size: 1.5rem;
+        }
+
+        .history-details {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 640px) {
+            .history-details {
+                gap: 0.5rem;
             }
-            button {
-                font-size: 1em;
+        }
+
+        .history-voice {
+            color: #a5b4fc;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 640px) {
+            .history-voice {
+                font-size: 0.8rem;
+            }
+        }
+
+        .history-date {
+            color: #9ca3af;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 640px) {
+            .history-date {
+                font-size: 0.75rem;
+            }
+        }
+
+        .action-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2.5rem;
+            height: 2.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .action-button {
+                min-width: 2rem;
+                height: 2rem;
+                padding: 0.4rem;
+            }
+
+            .action-button svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        .action-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .action-button.use {
+            color: #3b82f6;
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .action-button.delete {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .action-button.use:hover {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .action-button.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 2rem;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 640px) {
+            .empty-history {
+                padding: 1.5rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        .audio-container {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .download-button {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .download-button:hover {
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .download-button svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .audio-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .download-button {
+                justify-content: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-    
     <div class="container">
-        <h1>TTS</h1>
-        <form id="ttsForm" onsubmit="event.preventDefault(); generateSpeech();">
-            <label for="voiceSelect">Select Voice</label>
-            <select id="voiceSelect"></select>
-        
-        
-            <label for="textInput">Enter Text</label>
-            <textarea id="textInput" placeholder="Type your Hinglish text here..."></textarea>
-            
-            <button id="generateBtn" type="submit">
-                <span>Generate Speech</span>
-                <div id="loading" class="loading"></div>
-            </button>
-            <div id="error" class="error"></div>
-        </form>
-        <audio id="audioPlayer" controls></audio>
+        <div class="header">
+            <h1>TTS</h1>
+            <div class="nav-buttons">
+                <button class="nav-button active" data-screen="tts">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                        <line x1="12" x2="12" y1="19" y2="22"></line>
+                    </svg>
+                    Text to Speech
+                </button>
+                <button class="nav-button" data-screen="history">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 8v4l3 3"></path>
+                        <circle cx="12" cy="12" r="10"></circle>
+                    </svg>
+                    History
+                </button>
+            </div>
+        </div>
+
+        <div id="ttsScreen" class="main-content active">
+            <form id="ttsForm" class="tts-form" onsubmit="event.preventDefault(); generateSpeech();">
+                <div class="form-group">
+                    <label for="voiceSelect">Select Voice</label>
+                    <select id="voiceSelect"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="textInput">Enter Text</label>
+                    <textarea id="textInput" rows="4" placeholder="Enter your text here..."></textarea>
+                </div>
+                
+                <button id="generateBtn" type="submit">
+                    <span>Generate Speech</span>
+                    <div id="loading" class="loading"></div>
+                </button>
+                <div id="error" class="error"></div>
+            </form>
+            <div class="audio-container">
+                <audio id="audioPlayer" controls></audio>
+                <div class="audio-controls">
+                    <button id="downloadBtn" class="download-button" style="display: none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download Audio
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="historyScreen" class="main-content">
+            <div class="history-screen">
+                <div class="history-header">
+                    <h2 class="history-title">Recent Searches</h2>
+                    <button id="clearHistory" class="action-button delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 6h18"></path>
+                            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        </svg>
+                        Clear All
+                    </button>
+                </div>
+                <div id="historyList" class="history-list"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -336,9 +651,29 @@
         const generateBtn = document.getElementById('generateBtn');
         const loadingSpinner = document.getElementById('loading');
         const voiceSelect = document.getElementById('voiceSelect');
+        const historyList = document.getElementById('historyList');
+        const clearHistoryBtn = document.getElementById('clearHistory');
+        const navButtons = document.querySelectorAll('.nav-button');
+        const screens = document.querySelectorAll('.main-content');
         let voices = [];
         let selectedVoiceId = null;
         const defaultVoiceId = 'hi-IN-amit';
+        const downloadBtn = document.getElementById('downloadBtn');
+        let currentAudioUrl = null;
+
+        // Navigation
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const screen = button.dataset.screen;
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                screens.forEach(s => s.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(`${screen}Screen`).classList.add('active');
+                if (screen === 'history') {
+                    loadHistory();
+                }
+            });
+        });
 
         function showError(message) {
             errorDiv.textContent = message;
@@ -399,6 +734,141 @@
             selectedVoiceId = this.value;
         });
 
+        async function saveToHistory(text, voiceId) {
+            try {
+                const voice = voices.find(v => v.id === voiceId);
+                await db.collection('searchHistory').add({
+                    text: text,
+                    voiceId: voiceId,
+                    voiceName: voice ? `${voice.name} (${voice.gender}, ${voice.accent})` : voiceId,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                loadHistory();
+            } catch (error) {
+                console.error('Error saving to history:', error);
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const snapshot = await db.collection('searchHistory')
+                    .orderBy('timestamp', 'desc')
+                    .limit(50)
+                    .get();
+
+                historyList.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    historyList.innerHTML = `
+                        <div class="empty-history">
+                            <p>No history yet. Start by generating some speech!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const li = document.createElement('li');
+                    li.className = 'history-item';
+                    li.innerHTML = `
+                        <div class="history-content">
+                            <div class="history-text">${data.text}</div>
+                            <div class="history-details">
+                                <span class="history-voice">${data.voiceName}</span>
+                                <span class="history-date">${new Date(data.timestamp?.toDate()).toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div class="history-actions">
+                            <button class="action-button use" title="Use this text">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14"></path>
+                                    <path d="m12 5 7 7-7 7"></path>
+                                </svg>
+                            </button>
+                            <button class="action-button delete" title="Delete this item">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    `;
+
+                    const useButton = li.querySelector('.use');
+                    useButton.onclick = (e) => {
+                        e.stopPropagation();
+                        textInput.value = data.text;
+                        voiceSelect.value = data.voiceId;
+                        selectedVoiceId = data.voiceId;
+                        // Switch to TTS screen
+                        navButtons[0].click();
+                        textInput.focus();
+                    };
+
+                    const deleteButton = li.querySelector('.delete');
+                    deleteButton.onclick = async (e) => {
+                        e.stopPropagation();
+                        if (confirm('Are you sure you want to delete this item?')) {
+                            try {
+                                await db.collection('searchHistory').doc(doc.id).delete();
+                                loadHistory();
+                            } catch (error) {
+                                console.error('Error deleting history item:', error);
+                                showError('Failed to delete history item');
+                            }
+                        }
+                    };
+
+                    historyList.appendChild(li);
+                });
+            } catch (error) {
+                console.error('Error loading history:', error);
+                showError('Failed to load history');
+            }
+        }
+
+        async function clearHistory() {
+            if (!confirm('Are you sure you want to clear all history?')) {
+                return;
+            }
+            
+            try {
+                const snapshot = await db.collection('searchHistory').get();
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => {
+                    batch.delete(doc.ref);
+                });
+                await batch.commit();
+                loadHistory();
+            } catch (error) {
+                console.error('Error clearing history:', error);
+                showError('Failed to clear history');
+            }
+        }
+
+        function updateDownloadButton(audioUrl) {
+            if (audioUrl) {
+                currentAudioUrl = audioUrl;
+                downloadBtn.style.display = 'flex';
+            } else {
+                currentAudioUrl = null;
+                downloadBtn.style.display = 'none';
+            }
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            if (currentAudioUrl) {
+                const a = document.createElement('a');
+                a.href = currentAudioUrl;
+                a.download = `tts-${new Date().toISOString().slice(0, 19).replace(/[:]/g, '-')}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        });
+
         async function generateSpeech() {
             if (!textInput.value.trim()) {
                 showError('Please enter some text');
@@ -428,6 +898,9 @@
                 const audioBlob = await response.blob();
                 const audioUrl = URL.createObjectURL(audioBlob);
                 
+                // Save to history after successful generation
+                await saveToHistory(textInput.value, selectedVoiceId);
+                
                 // Reset audio player
                 audioPlayer.pause();
                 audioPlayer.removeAttribute('src');
@@ -435,6 +908,7 @@
                 
                 // Set new source and play
                 audioPlayer.src = audioUrl;
+                updateDownloadButton(audioUrl);
                 try {
                     await audioPlayer.play();
                 } catch (playError) {
@@ -442,6 +916,7 @@
                 }
             } catch (error) {
                 showError(error.message);
+                updateDownloadButton(null);
             } finally {
                 hideLoading();
             }
@@ -450,6 +925,9 @@
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
             loadVoices();
+            loadHistory();
+            clearHistoryBtn.addEventListener('click', clearHistory);
+            updateDownloadButton(null); // Hide download button initially
         });
     </script>
 </body>
