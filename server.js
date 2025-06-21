@@ -3,14 +3,20 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const axios = require('axios');
 const path = require('path');
+const { HfInference } = require('@huggingface/inference');
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
 
-// Serve static files from the public directory
+const MURF_API_KEY = process.env.MURF_API_KEY;
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+
+// Log key to verify it's loaded
+console.log(`Hugging Face Key Loaded: ${process.env.HUGGINGFACE_API_KEY ? 'Yes, starting with ' + process.env.HUGGINGFACE_API_KEY.substring(0, 5) : 'No'}`);
+
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Serve the main HTML file
@@ -135,6 +141,40 @@ app.post('/api/tts', async (req, res) => {
       details: error.response?.data || error.message
     });
   }
+});
+
+app.post('/api/suggestions', async (req, res) => {
+    const { text } = req.body;
+    if (!text || text.trim() === '') {
+        return res.json({ suggestions: [] });
+    }
+
+    try {
+        const fullPrompt = `Complete the following sentence: ${text}`;
+        
+        const response = await hf.textGeneration({
+            model: 'ai4bharat/IndicGPT-S',
+            inputs: fullPrompt,
+            parameters: {
+                max_new_tokens: 20,
+                num_return_sequences: 3,
+                temperature: 0.7,
+                top_p: 0.95,
+                do_sample: true,
+            },
+        });
+
+        const suggestions = response.map(s => {
+            let generatedText = s.generated_text.replace(fullPrompt, '').trim();
+            generatedText = generatedText.split('\n')[0];
+            return (text + ' ' + generatedText).trim();
+        }).filter(s => s.length > text.length + 1);
+
+        res.json({ suggestions: [...new Set(suggestions)] });
+    } catch (error) {
+        console.error('Error with Hugging Face API:', error);
+        res.status(500).json({ error: 'Failed to get suggestions' });
+    }
 });
 
 const PORT = process.env.PORT || 5001;

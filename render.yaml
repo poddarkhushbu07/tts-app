@@ -2,10 +2,15 @@ services:
   - type: web
     name: hinglish-tts-app
     env: node
-    buildCommand: npm install
-    startCommand: npm start
+    plan: free
+    buildCommand: 'npm install'
+    startCommand: 'npm start'
     envVars:
+      - key: NODE_VERSION
+        value: 18 # Using a stable LTS version of Node.js
       - key: MURF_API_KEY
-        sync: false
+        fromSecret: true
+      - key: HUGGINGFACE_API_KEY
+        fromSecret: true
       - key: PORT
         value: 10000 

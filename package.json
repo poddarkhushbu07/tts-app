@@ -1,18 +1,24 @@
 {
   "name": "hinglish-tts-app",
   "version": "1.0.0",
-  "description": "Hinglish Text to Speech Application",
+  "description": "A simple Text-to-Speech app with Hinglish support.",
   "main": "server.js",
-  "type": "commonjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "tts",
+    "hinglish",
+    "react"
+  ],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
+    "@huggingface/inference": "^2.7.0",
     "axios": "^1.6.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.18.3",
-    "firebase": "^10.8.0",
-    "firebase-admin": "^12.0.0"
+    "express": "^4.18.2"
   }
 }
