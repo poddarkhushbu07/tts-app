@@ -3,7 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const axios = require('axios');
 const path = require('path');
-const { HfInference } = require('@huggingface/inference');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 dotenv.config();
 
@@ -11,10 +11,13 @@ const app = express();
 app.use(cors());
 
 const MURF_API_KEY = process.env.MURF_API_KEY;
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+
+const genAI = new GoogleGenerativeAI(GOOGLE_API_KEY);
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // Log key to verify it's loaded
-console.log(`Hugging Face Key Loaded: ${process.env.HUGGINGFACE_API_KEY ? 'Yes, starting with ' + process.env.HUGGINGFACE_API_KEY.substring(0, 5) : 'No'}`);
+console.log(`Google API Key Loaded: ${process.env.GOOGLE_API_KEY ? 'Yes, starting with ' + process.env.GOOGLE_API_KEY.substring(0, 5) : 'No'}`);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -145,34 +148,26 @@ app.post('/api/tts', async (req, res) => {
 
 app.post('/api/suggestions', async (req, res) => {
     const { text } = req.body;
-    if (!text || text.trim() === '') {
+    if (!text || text.trim().length < 3) {
         return res.json({ suggestions: [] });
     }
 
     try {
-        const fullPrompt = `Complete the following sentence: ${text}`;
+        const prompt = `You are an AI assistant for a Text-to-Speech app. Your task is to provide 3 text auto-completion suggestions for the given input. The users are primarily Indian and will use English, Hindi, and Hinglish (a mix of Hindi and English). The suggestions should be concise, relevant, and continue the user's thought.
         
-        const response = await hf.textGeneration({
-            model: 'ai4bharat/IndicGPT-S',
-            inputs: fullPrompt,
-            parameters: {
-                max_new_tokens: 20,
-                num_return_sequences: 3,
-                temperature: 0.7,
-                top_p: 0.95,
-                do_sample: true,
-            },
-        });
+User Input: "${text}"
 
-        const suggestions = response.map(s => {
-            let generatedText = s.generated_text.replace(fullPrompt, '').trim();
-            generatedText = generatedText.split('\n')[0];
-            return (text + ' ' + generatedText).trim();
-        }).filter(s => s.length > text.length + 1);
+Provide 3 completions for this input. Return only the full completed sentences, each on a new line, and nothing else.`;
 
-        res.json({ suggestions: [...new Set(suggestions)] });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const suggestionsText = response.text();
+
+        const suggestions = suggestionsText.split('\n').map(s => s.trim()).filter(s => s && s.length > text.length);
+
+        res.json({ suggestions });
     } catch (error) {
-        console.error('Error with Hugging Face API:', error);
+        console.error('Error with Google Gemini API:', error);
         res.status(500).json({ error: 'Failed to get suggestions' });
     }
 });
